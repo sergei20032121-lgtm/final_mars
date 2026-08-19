@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>М.А.Р.С. v3.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta name="mars-token" content="{{ mars_token }}">
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo-block">
+    <div class="logo-icon">🤖</div>
+    <div>
+      <div class="logo-text">М.А.Р.С.</div>
+      <div class="logo-sub">Мобильный Автоматизированный Робот Спасатель</div>
+      <div class="logo-badge">v3.0 · Orange Pi H3 · Armbian</div>
+    </div>
+  </div>
+
+  <!-- ИНФО-ПОЛОСКА -->
+  <div id="strip">
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">GPIO</div>
+        <div class="strip-val dim" id="s_gpio">SIM</div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Батарея</div>
+        <div id="batt-wrap">
+          <div id="batt-bar"><div id="batt-fill"></div></div>
+          <div class="strip-val" id="s_batt">100%</div>
+        </div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Позиция</div>
+        <div class="strip-val" id="s_pos">—</div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Угол</div>
+        <div class="strip-val" id="s_angle">—</div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Скорость</div>
+        <div class="strip-val" id="s_speed">—</div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Команда</div>
+        <div class="strip-val" id="s_cmd">СТОП</div>
+      </div>
+    </div>
+    <div class="strip-item" id="s_auto_wrap" style="display:none;">
+      <div class="status-pill" style="color:var(--ac);border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.08);">
+        🤖 <span id="s_auto_mode">ПОИСК</span>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Сонар</div>
+        <div class="strip-val" id="s_sonar">—</div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Найдено</div>
+        <div class="strip-val" id="s_found">0</div>
+      </div>
+    </div>
+    <div class="strip-item" style="margin-left:auto;">
+      <div>
+        <div class="strip-lbl">FPS</div>
+        <div class="strip-val dim" id="s_fps">—</div>
+      </div>
+    </div>
+    <div class="strip-item">
+      <div>
+        <div class="strip-lbl">Время</div>
+        <div class="strip-val dim" id="s_time">0:00</div>
+      </div>
+    </div>
+    <div style="padding:4px 10px;">
+      <button onclick="toggleTheme()" style="padding:4px 10px;font-size:8px;color:var(--txt2);border-color:var(--brd);">🌙</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ЛЕВАЯ КОЛОНКА -->
+  <div style="display:flex;flex-direction:column;gap:10px;">
+
+    <!-- СТАТУС-СЕТКА -->
+    <div class="sg">
+      <div class="sc"><div class="sl">GPIO</div><div class="sv" id="gpioStat">SIM</div></div>
+      <div class="sc"><div class="sl">Камера</div><div class="sv" id="fpsStat">—</div></div>
+      <div class="sc"><div class="sl">Лиц</div><div class="sv" id="facesStat">0</div></div>
+      <div class="sc"><div class="sl">Найдено</div><div class="sv a" id="foundStat">0</div></div>
+      <div class="sc"><div class="sl">Покрытие</div><div class="sv" id="coverStat">—</div></div>
+      <div class="sc"><div class="sl">Путь</div><div class="sv" id="distStat">—</div></div>
+    </div>
+
+    <!-- КАРТА -->
+    <div class="p">
+      <div class="p-title">
+        <span class="dot"></span>
+        Навигационная карта
+        <span style="margin-left:auto;font-size:9px;color:var(--txt2);" id="mapStatus">Загрузка...</span>
+      </div>
+      <canvas id="mapCanvas" width="800" height="600"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ПРАВАЯ КОЛОНКА -->
+  <div style="display:flex;flex-direction:column;gap:10px;">
+
+    <!-- КАМЕРА -->
+    <div class="p">
+      <div class="p-title">
+        <span class="dot"></span>
+        Live камера
+      </div>
+      <img id="videoImg" src="" alt="">
+      <div class="cam-st">
+        <div class="cam-dot" id="camDot"></div>
+        <span id="camSt">Инициализация...</span>
+      </div>
+      <select id="camSel" onchange="changeCamera(this.value)">
+        <option value="">📷 Выбрать камеру...</option>
+      </select>
+    </div>
+
+    <!-- СОНАР -->
+    <div class="p">
+      <div class="p-title">
+        <span class="dot"></span>
+        Радар — HY-SRF05
+        <span id="sonarMode" style="margin-left:auto;font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(255,82,82,.1);color:var(--ac3);border:1px solid rgba(255,82,82,.2);">ВЫКЛ</span>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <canvas id="radarCanvas" width="170" height="170" style="flex-shrink:0;"></canvas>
+        <div style="flex:1;min-width:0;">
+          <div id="sonarWarn" style="font-family:Orbitron,sans-serif;font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px;letter-spacing:1px;">📡 ВЫКЛЮЧЕН</div>
+          <div class="sonar-info">
+            <strong>Дистанция:</strong> <span id="sonarDist">—</span><br>
+            <strong>Угол:</strong> <span id="sonarSweep">0°</span><br>
+            <strong>Объектов:</strong> <span id="sonarObjCount">0</span><br>
+            <strong>Статус:</strong> <span id="sonarObs">—</span>
+          </div>
+          <div style="display:flex;gap:5px;margin-top:10px;">
+            <button id="btnSonarOn" onclick="setSonarMode('on')" style="flex:1;padding:6px;font-size:8px;">▶ ВКЛ</button>
+            <button id="btnSonarOff" onclick="setSonarMode('off')" class="btn-danger" style="flex:1;padding:6px;font-size:8px;">■ ВЫКЛ</button>
+            <button onclick="sonarDiagnostic()" class="btn-info" style="flex:0;padding:6px 8px;font-size:9px;" title="Диагностика">🔍</button>
+          </div>
+          <div id="sonarDiagResult" style="display:none;margin-top:6px;font-size:10px;background:var(--bg3);border-radius:4px;padding:7px;color:var(--txt2);line-height:1.9;border:1px solid var(--brd);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- УПРАВЛЕНИЕ -->
+    <div class="p">
+      <div class="p-title">
+        <span class="dot"></span>
+        Управление
+        <span style="margin-left:6px;font-size:9px;color:var(--txt2);">WASD · SPC · Q · P</span>
+      </div>
+
+      <div class="wasd">
+        <div></div>
+        <div class="wk" id="kW">W</div>
+        <div></div>
+        <div class="wk" id="kA">A</div>
+        <div class="wk stop" id="kSP">SPC</div>
+        <div class="wk" id="kD">D</div>
+        <div></div>
+        <div class="wk" id="kS">S</div>
+        <div></div>
+      </div>
+
+      <div class="btn-row">
+        <button onmousedown="cmd('forward')" onmouseup="cmd('stop')" ontouchstart="cmd('forward')" ontouchend="cmd('stop')">↑ Вперёд</button>
+        <button onmousedown="cmd('backward')" onmouseup="cmd('stop')" ontouchstart="cmd('backward')" ontouchend="cmd('stop')">↓ Назад</button>
+      </div>
+      <div class="btn-row">
+        <button onmousedown="cmd('left')" onmouseup="cmd('stop')" ontouchstart="cmd('left')" ontouchend="cmd('stop')">← Влево</button>
+        <button class="btn-danger" onclick="cmd('stop')">■ Стоп</button>
+        <button onmousedown="cmd('right')" onmouseup="cmd('stop')" ontouchstart="cmd('right')" ontouchend="cmd('stop')">Вправо →</button>
+      </div>
+
+      <div class="speed-row">
+        <span class="lbl">⚡ Скорость</span>
+        <input type="range" id="speedSlider" min="0" max="255" value="150" oninput="setSpeed(this.value)">
+        <span class="spd-val" id="speedVal">150</span>
+      </div>
+
+      <!-- ПЕРЕКЛЮЧАТЕЛЬ ТЕМ -->
+      <div class="theme-row">
+        <button class="tbtn on" id="th-steel" onclick="setTheme('')">СТАЛЬ</button>
+        <button class="tbtn" id="th-amber" onclick="setTheme('amber')">ЯНТАРЬ</button>
+        <button class="tbtn" id="th-night" onclick="setTheme('night')">НОЧЬ</button>
+      </div>
+
+      <!-- E-STOP -->
+      <button class="btn-estop" id="estopBtn" onclick="toggleEstop()">
+        ⬛ АВАРИЙНЫЙ СТОП
+      </button>
+
+      <div class="btn-row">
+        <button id="apBtn" onclick="toggleAutopilot()">🤖 Автопоиск</button>
+        <button onclick="startMission()" class="btn-info" id="missionBtn">🎯 Миссия</button>
+        <button onclick="takeScreenshot()" class="btn-info">📸</button>
+        <button onclick="exportMap()" class="btn-info">🗺</button>
+        <button onclick="openReport()">📄</button>
+        <button onclick="clearPath()" style="flex:0;padding:9px 10px;color:var(--txt2);">🗑</button>
+      </div>
+
+      <div class="ap-st" id="apStatus">🤖 Автопилот активен — <span id="apMode">ПОИСК</span></div>
+
+      <!-- РЕЖИМ РОБОТА + СИМУЛЯЦИЯ МОТОРОВ -->
+      <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+        <span style="font-size:9px;color:var(--txt2);letter-spacing:1px;">Движ:</span>
+        <button id="btnModeSim" onclick="setRobotMode('sim')"
+                class="btn-active" style="flex:1;padding:6px;font-size:8px;">
+            🔵 Карта
+        </button>
+        <button id="btnModeReal" onclick="setRobotMode('real')"
+                style="flex:1;padding:6px;font-size:8px;">
+            🟢 Реальный
+        </button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+        <span style="font-size:9px;color:var(--txt2);letter-spacing:1px;">Мотор:</span>
+        <button id="btnMotorSim" onclick="setMotorSim(true)"
+                class="btn-active" style="flex:1;padding:6px;font-size:8px;">
+            ⚫ СИМ
+        </button>
+        <button id="btnMotorReal" onclick="setMotorSim(false)"
+                style="flex:1;padding:6px;font-size:8px;">
+            ⚡ GPIO
+        </button>
+      </div>
+
+      <!-- СТАТУС МОТОРОВ -->
+      <div id="motorsWidget" style="background:var(--bg3);border:1px solid var(--brd);
+           border-radius:6px;padding:8px;margin-bottom:8px;">
+        <div style="font-size:9px;color:var(--txt2);text-transform:uppercase;
+                    letter-spacing:1px;margin-bottom:6px;">⚙ Состояние моторов</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">
+          <div id="mtr-forward"  class="mtr-cell">↑ Вперёд</div>
+          <div id="mtr-backward" class="mtr-cell">↓ Назад</div>
+          <div id="mtr-left"     class="mtr-cell">← Влево</div>
+          <div id="mtr-right"    class="mtr-cell">Вправо →</div>
+        </div>
+        <div style="margin-top:6px;font-size:10px;color:var(--txt2);">
+          GPIO: <span id="mtr-gpio" style="color:var(--txt2);">—</span>
+        </div>
+      </div>
+
+      <div class="ibox" id="infoBox">Загрузка данных...</div>
+    </div>
+
+    <!-- НАЙДЕННЫЕ ЛЮДИ -->
+    <div class="p">
+      <div class="p-title">
+        <span class="dot"></span>
+        Обнаруженные люди
+        <span style="margin-left:auto;font-family:Orbitron,sans-serif;color:var(--ac3);font-size:14px;font-weight:700;" id="humanCount">0</span>
+      </div>
+      <div class="hlist" id="humansList">
+        <div style="color:var(--txt2);padding:10px;text-align:center;font-size:11px;">Людей не обнаружено</div>
+      </div>
+    </div>
+
+    <!-- СТАТИСТИКА -->
+    <div class="p">
+      <div class="p-title"><span class="dot"></span>Статистика сессии</div>
+      <div class="stats-grid">
+        <div class="sm"><div class="n" id="st-uptime">—</div><div class="l">Время</div></div>
+        <div class="sm"><div class="n" id="st-dist">—</div><div class="l">Путь</div></div>
+        <div class="sm"><div class="n" id="st-cover">—</div><div class="l">Покрытие</div></div>
+        <div class="sm"><div class="n" id="st-humans" style="color:var(--ac3);">0</div><div class="l">Найдено</div></div>
+        <div class="sm"><div class="n" id="st-path">—</div><div class="l">Точек</div></div>
+        <div class="sm"><div class="n" id="st-session" style="font-size:9px;">—</div><div class="l">Сессия</div></div>
+      </div>
+      <div style="margin-top:8px;">
+        <div style="font-size:9px;color:var(--txt2);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+          <span>📋 Журнал событий</span>
+          <span id="logDir" style="opacity:.4;"></span>
+        </div>
+        <div class="elog" id="eventLog">Ожидание событий...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- POPUP -->
+<div class="overlay" id="popupOverlay" onclick="closePopup()"></div>
+<div class="popup" id="humanPopup">
+  <span class="popup-close" onclick="closePopup()">✕</span>
+  <div id="popupContent"></div>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

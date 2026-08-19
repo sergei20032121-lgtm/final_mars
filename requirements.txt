@@ -1,0 +1,5 @@
+Flask==3.0.3
+Pillow==10.4.0
+numpy==1.26.4
+pyserial==3.5
+OPi.GPIO==0.4.1 ; platform_machine != "x86_64" and platform_machine != "AMD64"

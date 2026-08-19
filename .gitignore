@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+mapc_env/
+
+# Секрет для /api/swarm/* и state-mutating роутов — генерируется при
+# первом запуске, никогда не коммитится (см. mars/web/auth.py)
+.mars_token
+
+.pytest_cache/

@@ -39,19 +39,14 @@ echo "[3] Создание виртуального окружения..."
 python3 -m venv ~/mapc_env --system-site-packages
 source ~/mapc_env/bin/activate
 
-# pip пакеты
+# pip пакеты — версии зафиксированы в requirements.txt
 echo "[4] Установка pip пакетов..."
 pip install --upgrade pip --quiet
-pip install flask       --quiet 2>/dev/null || sudo apt-get install -y python3-flask
-pip install OPi.GPIO    --quiet 2>/dev/null || echo "   ⚠️  OPi.GPIO — попробуем позже"
-pip install pyserial    --quiet 2>/dev/null || sudo apt-get install -y python3-serial
-
-# OPi.GPIO отдельно если не установился
-python -c "import OPi.GPIO" 2>/dev/null || {
-    echo "   Пробуем альтернативный способ..."
-    pip install --extra-index-url https://pypi.org/simple/ OPi.GPIO --quiet 2>/dev/null || \
-    pip install wiringpi --quiet 2>/dev/null || \
-    echo "   ⚠️  GPIO установить не удалось — моторы в симуляции"
+pip install -r "$(dirname "$0")/requirements.txt" --quiet || {
+    echo "   ⚠️  Не всё поставилось из requirements.txt, пробуем по частям..."
+    pip install flask    --quiet 2>/dev/null || sudo apt-get install -y python3-flask
+    pip install pyserial  --quiet 2>/dev/null || sudo apt-get install -y python3-serial
+    pip install OPi.GPIO --quiet 2>/dev/null || echo "   ⚠️  GPIO установить не удалось — моторы в симуляции"
 }
 
 deactivate
@@ -95,6 +90,7 @@ echo "=== Проверка ==="
 source ~/mapc_env/bin/activate
 python -c "import flask;        print('✓ Flask')"      2>/dev/null || echo "✗ Flask"
 python -c "from PIL import Image; print('✓ Pillow')"   2>/dev/null || echo "✗ Pillow"
+python -c "import numpy;        print('✓ numpy')"     2>/dev/null || echo "✗ numpy"
 python -c "import serial;       print('✓ PySerial')"   2>/dev/null || echo "✗ PySerial"
 python -c "import OPi.GPIO;     print('✓ OPi.GPIO')"  2>/dev/null || echo "✗ OPi.GPIO (симуляция)"
 command -v pigo >/dev/null      && echo "✓ Pigo"       || echo "✗ Pigo (без детекции лиц)"

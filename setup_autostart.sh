@@ -1,11 +1,16 @@
 #!/bin/bash
 # М.А.Р.С. — Настройка автозапуска
 # Orange Pi PC H3 / Armbian / пользователь komar
+#
+# Пароль WiFi раньше был захардкожен прямо здесь и утёк в публичный
+# GitHub-репозиторий — смените пароль на роутере, если ещё не сменили.
+# Запуск:
+#   MARS_WIFI_SSID="rt-80" MARS_WIFI_PASS="..." ./setup_autostart.sh
 
 set -e
 
-WIFI_SSID="rt-80"
-WIFI_PASS="77599550570"
+WIFI_SSID="${MARS_WIFI_SSID:?Задайте переменную MARS_WIFI_SSID перед запуском}"
+WIFI_PASS="${MARS_WIFI_PASS:?Задайте переменную MARS_WIFI_PASS перед запуском}"
 WIFI_IFACE="wlxa047d77359bf"
 SCRIPT="/home/komar/Desktop/robot_rescue_demo.py"
 VENV="/home/komar/mapc_env"
